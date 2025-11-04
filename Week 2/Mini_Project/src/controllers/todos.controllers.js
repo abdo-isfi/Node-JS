@@ -1,4 +1,4 @@
-const { todos, validateTodo, validateTodoUpdate, getFilteredAndSortedTodos } = require('../services/todos.services');
+const { todos, validateTodo, validateTodoUpdate, getFilteredAndSortedTodos, saveTodos } = require('../services/todos.services');
 
 const getAllTodos = (req, res) => {
     const { status, q, page, limit } = req.query;
@@ -14,12 +14,16 @@ const getTodoById = (req, res) => {
     res.json(todo);
 };
 
-const createTodo = (req, res) => {
-    const { title, priority } = req.body;
+const createTodo = async (req, res) => {
+    const { title, priority, dueDate } = req.body;
+
+    const nextId = todos.length > 0 ? Math.max(...todos.map(t => t.id)) + 1 : 1;
+
     const newTodo = {
-        id: todos.length + 1,
+        id: nextId,
         title,
-        priority: priority || 'medium', 
+        priority: priority || 'medium',
+        dueDate,
         completed: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -31,10 +35,11 @@ const createTodo = (req, res) => {
     }
 
     todos.push(newTodo);
+    await saveTodos();
     res.status(201).json(newTodo);
 };
 
-const updateTodo = (req, res) => {
+const updateTodo = async (req, res) => {
     const todo = todos.find(t => t.id === parseInt(req.params.id));
     if (!todo) {
         return res.status(404).json({ error: 'Todo not found' });
@@ -51,25 +56,28 @@ const updateTodo = (req, res) => {
         }
     }
     todo.updatedAt = new Date().toISOString();
+    await saveTodos();
     res.json(todo);
 };
 
-const deleteTodo = (req, res) => {
+const deleteTodo = async (req, res) => {
     const index = todos.findIndex(t => t.id === parseInt(req.params.id));
     if (index === -1) {
         return res.status(404).json({ error: 'Todo not found' });
     }
     todos.splice(index, 1);
+    await saveTodos();
     res.status(204).send();
 };
 
-const toggleTodoCompletion = (req, res) => {
+const toggleTodoCompletion = async (req, res) => {
     const todo = todos.find(t => t.id === parseInt(req.params.id));
     if (!todo) {
         return res.status(404).json({ error: 'Todo not found' });
     }
     todo.completed = !todo.completed;
     todo.updatedAt = new Date().toISOString();
+    await saveTodos();
     res.json(todo);
 };
 

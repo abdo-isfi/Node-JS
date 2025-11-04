@@ -1,4 +1,34 @@
-const todos = [];
+const fs = require('fs').promises;
+const path = require('path');
+
+const todosFilePath = path.join(__dirname, '../data/todos.json');
+
+let todos = [];
+
+async function initializeTodos() {
+    try {
+        const data = await fs.readFile(todosFilePath, 'utf8');
+        todos = JSON.parse(data);
+        console.log('Todos loaded successfully.');
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            console.log('todos.json not found, initializing with empty array.');
+            todos = [];
+        } else {
+            console.error('Error reading todos.json:', err.message);
+            todos = []; // Fallback to empty array on other errors
+        }
+    }
+}
+
+async function saveTodos() {
+    try {
+        await fs.writeFile(todosFilePath, JSON.stringify(todos, null, 2), 'utf8');
+        console.log('Todos saved successfully.');
+    } catch (err) {
+        console.error('Error writing todos.json:', err.message);
+    }
+}
 
 function validateTodo(todo) {
     if (!todo.title) return { error: 'Title is required' };
@@ -40,13 +70,13 @@ function getFilteredAndSortedTodos(status, q, page = 1, limit = 10) {
             filteredTodos = filteredTodos.filter(todo => todo.completed === true);
         }
     }
-    // Search by title
+
     if (q) {
         const searchTerm = q.toLowerCase();
         filteredTodos = filteredTodos.filter(todo => todo.title.toLowerCase().includes(searchTerm));
     }
 
-    // Default sort by createdAt  descending
+    // Default sort by createdAt descending
     filteredTodos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     const total = filteredTodos.length;
@@ -58,4 +88,11 @@ function getFilteredAndSortedTodos(status, q, page = 1, limit = 10) {
     return { data: paginatedTodos, total, page: parseInt(page), pages };
 }
 
-module.exports = { todos, validateTodo, validateTodoUpdate, getFilteredAndSortedTodos };
+module.exports = {
+    todos,
+    validateTodo,
+    validateTodoUpdate,
+    getFilteredAndSortedTodos,
+    saveTodos,
+    initializeTodos
+};

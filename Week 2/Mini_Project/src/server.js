@@ -4,6 +4,8 @@ const errorHandler = require('./middlewares/errorHandler');
 const app = express();
 const port = 3000;
 
+const { initializeTodos } = require('./services/todos.services');
+
 app.use(express.json());
 app.use(logger);
 
@@ -18,4 +20,5 @@ app.use(errorHandler);
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
+    initializeTodos(); // Initialize todos when server starts
 });
