@@ -1,0 +1,90 @@
+[
+  {
+    "id": 1,
+    "brand": "Corolla",
+    "model": "Corolla",
+    "category": "Sedan",
+    "plate": "ABC-123",
+    "pricePerDay": 100000,
+    "available": true,
+    "createdAt": "2025-11-04T00:00:00.000Z",
+    "updatedAt": "2025-11-04T00:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "brand": "Ford",
+    "model": "Mustang",
+    "category": "Coupe",
+    "plate": "DEF-456",
+    "pricePerDay": 150000,
+    "available": true,
+    "createdAt": "2025-11-04T00:00:00.000Z",
+    "updatedAt": "2025-11-04T00:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "brand": "Chevrolet",
+    "model": "Camaro",
+    "category": "Coupe",
+    "plate": "GHI-789",
+    "pricePerDay": 200000,
+    "available": true,
+    "createdAt": "2025-11-04T00:00:00.000Z",
+    "updatedAt": "2025-11-04T00:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "brand": "Audi",
+    "model": "A4",
+    "category": "Sedan",
+    "plate": "JKL-012",
+    "pricePerDay": 250000,
+    "available": true,
+    "createdAt": "2025-11-04T00:00:00.000Z",
+    "updatedAt": "2025-11-04T00:00:00.000Z"
+  },
+  {
+    "id": 5,
+    "brand": "BMW",
+    "model": "3 Series",
+    "category": "Sedan",
+    "plate": "MNO-345",
+    "pricePerDay": 300000,
+    "available": true,
+    "createdAt": "2025-11-04T00:00:00.000Z",
+    "updatedAt": "2025-11-04T00:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "brand": "Mercedes-Benz",
+    "model": "C-Class",
+    "category": "Sedan",
+    "plate": "PQR-678",
+    "pricePerDay": 350000,
+    "available": false,
+    "createdAt": "2025-11-04T00:00:00.000Z",
+    "updatedAt": "2025-11-07T13:06:33.721Z"
+  },
+  {
+    "id": 7,
+    "brand": "Volkswagen",
+    "model": "Golf",
+    "category": "Sedan",
+    "plate": "STU-910",
+    "pricePerDay": 400000,
+    "available": false,
+    "createdAt": "2025-11-04T00:00:00.000Z",
+    "updatedAt": "2025-11-07T13:06:08.812Z"
+  },
+  {
+    "id": 8,
+    "brand": "Toyota",
+    "model": "Camry",
+    "category": "sedan",
+    "pricePerDay": 50,
+    "plate": "XYZ-789",
+    "available": true,
+    "createdAt": "2025-11-07T13:11:00.283Z",
+    "updatedAt": "2025-11-07T13:11:00.284Z"
+  }
+]

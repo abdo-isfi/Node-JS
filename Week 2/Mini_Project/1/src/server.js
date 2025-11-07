@@ -2,7 +2,9 @@ const express = require('express');
 const logger = require('./middlewares/logger');
 const errorHandler = require('./middlewares/errorHandler');
 const app = express();
-const port = 3000;
+
+
+const port = process.env.PORT || 3000;
 
 const { initializeTodos } = require('./services/todos.services');
 
