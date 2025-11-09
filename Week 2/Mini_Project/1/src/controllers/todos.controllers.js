@@ -8,123 +8,101 @@ const {
   validateTodo,
   validateTodoUpdate,
 } = require("../services/todos.services");
+const createHttpError = require('http-errors');
 
 // Controller to handle getting all todos with filtering, searching, and pagination
-const getAllTodos = (req, res) => {
-  const { status, q, page, limit } = req.query;
-  const result = getFilteredAndSortedTodos(status, q, page, limit);
-  res.json(result);
+const getAllTodos = async (req, res, next) => {
+  try {
+    const { status, q, page, limit } = req.query;
+    const result = await getFilteredAndSortedTodos(req.user, status, q, page, limit);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
 };
 
 // Controller to handle getting a single todo by ID
-const getTodoById = (req, res) => {
-  const todo = getTodoByIdService(req.params.id);
-  if (!todo) {
-    return res.status(404).json({ error: "Todo not found" });
+const getTodoById = async (req, res, next) => {
+  try {
+    const todo = await getTodoByIdService(req.user, req.params.id);
+    if (!todo) {
+      return next(createHttpError(404, "Todo not found"));
+    }
+    res.json(todo);
+  } catch (error) {
+    next(error);
   }
-  res.json(todo);
 };
 
 // Controller to handle creating a new todo
-const createTodo = async (req, res) => {
-  const { title, priority, dueDate } = req.body;
-
-  const newTodoData = {
-    title,
-    priority: priority || "medium",
-    dueDate,
-  };
-  // Validate input data
-  const error = validateTodo(newTodoData);
-  if (error) {
-    return res.status(400).json({
-      status: "error",
-      message: error.error,
-      code: 400,
-      timestamp: new Date().toISOString(),
-    });
-  }
-  // Create the new todo
+const createTodo = async (req, res, next) => {
   try {
-    const newTodo = await createTodoService(title, priority, dueDate);
+    const { title, priority, dueDate } = req.body;
+
+    const newTodoData = {
+      title,
+      priority: priority || "medium",
+      dueDate,
+    };
+    // Validate input data
+    const error = validateTodo(newTodoData);
+    if (error) {
+      return next(createHttpError(400, error.error));
+    }
+    // Create the new todo
+    const newTodo = await createTodoService(req.user, title, priority, dueDate);
     res.status(201).json(newTodo);
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: error.message,
-      code: 500,
-      timestamp: new Date().toISOString(),
-    });
+    next(error);
   }
 };
 
 // Controller to handle updating an existing todo
-const updateTodo = async (req, res) => {
-  
-  const { id } = req.params;
-  const updateData = req.body;
-
-  const error = validateTodoUpdate(updateData);
-  if (error) {
-    return res.status(400).json({
-      status: "error",
-      message: error.error,
-      code: 400,
-      timestamp: new Date().toISOString(),
-    });
-  }
-
+const updateTodo = async (req, res, next) => {
   try {
-    const updatedTodo = await updateTodoService(id, updateData);
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const error = validateTodoUpdate(updateData);
+    if (error) {
+      return next(createHttpError(400, error.error));
+    }
+
+    const updatedTodo = await updateTodoService(req.user, id, updateData);
     if (!updatedTodo) {
-      return res.status(404).json({ error: "Todo not found" });
+      return next(createHttpError(404, "Todo not found"));
     }
     res.json(updatedTodo);
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: error.message,
-      code: 500,
-      timestamp: new Date().toISOString(),
-    });
+    next(error);
   }
 };
 
 // Controller to handle deleting a todo
-const deleteTodo = async (req, res) => {
-  const { id } = req.params;
+const deleteTodo = async (req, res, next) => {
   try {
-    const deleted = await deleteTodoService(id);
+    const { id } = req.params;
+    const deleted = await deleteTodoService(req.user, id);
     if (!deleted) {
-      return res.status(404).json({ error: "Todo not found" });
+      return next(createHttpError(404, "Todo not found"));
     }
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: error.message,
-      code: 500,
-      timestamp: new Date().toISOString(),
-    });
+    next(error);
   }
 };
 
 // Controller to handle toggling the completion status of a todo
-const toggleTodoCompletion = async (req, res) => {
-  const { id } = req.params;
+const toggleTodoCompletion = async (req, res, next) => {
   try {
-    const toggledTodo = await toggleTodoCompletionService(id);
+    const { id } = req.params;
+    const toggledTodo = await toggleTodoCompletionService(req.user, id);
     if (!toggledTodo) {
-      return res.status(404).json({ error: "Todo not found" });
+      return next(createHttpError(404, "Todo not found"));
     }
     res.json(toggledTodo);
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: error.message,
-      code: 500,
-      timestamp: new Date().toISOString(),
-    });
+    next(error);
   }
 };
 

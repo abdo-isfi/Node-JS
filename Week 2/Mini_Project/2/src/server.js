@@ -15,7 +15,6 @@ app.get('/', (req, res) => {
 
 const carsRoutes = require('./routes/cars.routes');
 const rentalsRoutes = require('./routes/rentals.routes');
-const auth = require('./middleware/auth');
 
 app.use('/api/cars', carsRoutes);
 app.use('/api/rentals', rentalsRoutes);

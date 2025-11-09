@@ -1,34 +1,5 @@
-const fs = require("fs").promises;
-const path = require("path");
-
-const todosFilePath = path.join(__dirname, "../data/todos.json");
-
-let todos = [];
-
-async function initializeTodos() {
-  try {
-    const data = await fs.readFile(todosFilePath, "utf8");
-    todos = JSON.parse(data);
-    console.log("Todos loaded successfully.");
-  } catch (err) {
-    if (err.code === "ENOENT") {
-      console.log("todos.json not found, initializing with empty array.");
-      todos = [];
-    } else {
-      console.error("Error reading todos.json:", err.message);
-      todos = []; // Fallback to empty array on other errors
-    }
-  }
-}
-
-async function saveTodos() {
-  try {
-    await fs.writeFile(todosFilePath, JSON.stringify(todos, null, 2), "utf8");
-    console.log("Todos saved successfully.");
-  } catch (err) {
-    console.error("Error writing todos.json:", err.message);
-  }
-}
+const Todo = require('../models/todo.model');
+const createHttpError = require('http-errors');
 
 function validateTodo(todo) {
   if (!todo.title) return { error: "Title is required" };
@@ -62,63 +33,67 @@ function validateTodoUpdate(todo) {
   return null;
 }
 
-function getFilteredAndSortedTodos(status, q, page = 1, limit = 10) {
-  let filteredTodos = [...todos];
-
+async function getFilteredAndSortedTodos(user, status, q, page = 1, limit = 10) {
+  const filter = {};
+  if (user.role === 'user') {
+    filter.user = user._id;
+  }
   if (status) {
-    if (status === "active") {
-      filteredTodos = filteredTodos.filter((todo) => todo.completed === false);
-    } else if (status === "completed") {
-      filteredTodos = filteredTodos.filter((todo) => todo.completed === true);
-    }
+    filter.completed = status === "completed";
   }
-
   if (q) {
-    const searchTerm = q.toLowerCase();
-    filteredTodos = filteredTodos.filter((todo) =>
-      todo.title.toLowerCase().includes(searchTerm)
-    );
+    filter.title = { $regex: q, $options: "i" };
   }
 
-  // Default sort by createdAt descending
-  filteredTodos.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  const total = await Todo.countDocuments(filter);
+  const paginatedTodos = await Todo.find(filter)
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit);
 
-  // Pagination
-  const total = filteredTodos.length;
-  const startIndex = (page - 1) * limit;
-  const endIndex = page * limit;
-  const paginatedTodos = filteredTodos.slice(startIndex, endIndex);
   const pages = Math.ceil(total / limit);
 
   return { data: paginatedTodos, total, page: parseInt(page), pages };
 }
 
-function getTodoByIdService(id) {
-    return todos.find(t => t.id === parseInt(id));
+async function getTodoByIdService(user, id) {
+    const filter = { id: id };
+    if (user.role === 'user') {
+        filter.user = user._id;
+    }
+    return await Todo.findOne(filter);
 }
 
-async function createTodoService(title, priority, dueDate) {
-    const nextId = todos.length > 0 ? Math.max(...todos.map(t => t.id)) + 1 : 1;
+async function createTodoService(user, title, priority, dueDate) {
+    const existingTodo = await Todo.findOne({ user: user._id, title: title });
+    if (existingTodo) {
+        throw createHttpError(400, 'You already have a todo with this title.');
+    }
 
-    const newTodo = {
+    const latestTodo = await Todo.findOne().sort({ id: -1 });
+    const nextId = latestTodo ? latestTodo.id + 1 : 1;
+
+    const newTodo = new Todo({
         id: nextId,
         title,
         priority: priority || 'medium',
         dueDate,
         completed: false,
+        user: user._id, // Assign the todo to the authenticated user
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-    };
+    });
 
-    todos.push(newTodo);
-    await saveTodos();
+    await newTodo.save();
     return newTodo;
 }
 
-async function updateTodoService(id, updateData) {
-    const todo = todos.find(t => t.id === parseInt(id));
+async function updateTodoService(user, id, updateData) {
+    const filter = { id: id };
+    if (user.role === 'user') {
+        filter.user = user._id;
+    }
+    const todo = await Todo.findOne(filter);
     if (!todo) {
         return null;
     }
@@ -129,28 +104,31 @@ async function updateTodoService(id, updateData) {
         }
     }
     todo.updatedAt = new Date().toISOString();
-    await saveTodos();
+    await todo.save();
     return todo;
 }
 
-async function deleteTodoService(id) {
-    const index = todos.findIndex(t => t.id === parseInt(id));
-    if (index === -1) {
-        return false;
+async function deleteTodoService(user, id) {
+    const filter = { id: id };
+    if (user.role === 'user') {
+        filter.user = user._id;
     }
-    todos.splice(index, 1);
-    await saveTodos();
-    return true;
+    const result = await Todo.deleteOne(filter);
+    return result.deletedCount > 0;
 }
 
-async function toggleTodoCompletionService(id) {
-    const todo = todos.find(t => t.id === parseInt(id));
+async function toggleTodoCompletionService(user, id) {
+    const filter = { id: id };
+    if (user.role === 'user') {
+        filter.user = user._id;
+    }
+    const todo = await Todo.findOne(filter);
     if (!todo) {
         return null;
     }
     todo.completed = !todo.completed;
     todo.updatedAt = new Date().toISOString();
-    await saveTodos();
+    await todo.save();
     return todo;
 }
 
@@ -158,8 +136,6 @@ module.exports = {
   validateTodo,
   validateTodoUpdate,
   getFilteredAndSortedTodos,
-  saveTodos,
-  initializeTodos,
   getTodoByIdService,
   createTodoService,
   updateTodoService,
